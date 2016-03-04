@@ -1,20 +1,28 @@
-#define PHOTO_PIN 11
 #define LED_PIN 13
 #define SPEAKER_PIN 15
 
 void setup()
 {
   Serial.begin(115200,SERIAL_8E2);                //begin serial with 115200 baud, even parity bit, and two end bits.
-  pinMode(PHOTO_PIN, INPUT);
   pinMode(LED_PIN, OUTPUT);
+  boolean hasGivenNo = false;
   for(int i = 0; i < 5000; i++)
     {
       if(Serial.available() >= 2)
         {
           int time = 0;
-          Serial.readBytes(&time,4);
+          Serial.readBytes((char*)&time,4);
           Serial.println(time-i);
           i = time;
+          hasGivenNo = false;
+        }
+        else
+        {
+          if(!hasGivenNo) {
+            Serial.print("no_recv:");
+            Serial.println(i);
+            hasGivenNo = true;
+          }
         }
       delay(1);
     }
@@ -34,26 +42,6 @@ void mk_sound()
   digitalWrite(SPEAKER_PIN,HIGH);
   delayMicroseconds(delaytimes[1]);
   digitalWrite(SPEAKER_PIN,LOW);
-=======
-#define PIN_SPEAKER = 10;
-
-void setup()
-{
-  
-}
-
-void do_sound(byte in)
-{
-  for(int i = 0; i < 8; i++)
-  {
-    if((0x80 >> i) | in)
-    {
-      digitalWrite(SPEAKER_PIN,HIGH);
-    }
-  else  
-  {
-    digitalWrite(SPEAKER_PIN, LOW);
-  }  
 }
 
 void loop()
@@ -63,9 +51,4 @@ void loop()
       PCM_to_delaytimes(Serial.read());
       mk_sound();
     }
-  byte dat;
-  if(Serial.available())
-    dat = Serial.read();
-   op_sound(dat);
-   
 }
