@@ -3,29 +3,40 @@
 
 void setup()
 {
-  Serial.begin(115200,SERIAL_8E2);                //begin serial with 115200 baud, even parity bit, and two end bits.
+  Serial.begin(115200);   //begin serial with 115200 baud, even parity bit, and two end bits.
+  SYNC:
   pinMode(LED_PIN, OUTPUT);
   boolean hasGivenNo = false;
-  for(int i = 0; i < 5000; i++)
+  bool HasSynced = false;
+  for(int i = 0; i < 5000/3; i++)
+  {
+    if(Serial.available() >= 2)
     {
-      if(Serial.available() >= 2)
-        {
-          int time = 0;
-          Serial.readBytes((char*)&time,4);
-          Serial.println(time-i);
-          i = time;
-          hasGivenNo = false;
-        }
-        else
-        {
-          if(!hasGivenNo) {
-            Serial.print("no_recv:");
-            Serial.println(i);
-            hasGivenNo = true;
-          }
-        }
-      delay(1);
+      int time = 0;
+      Serial.readBytes((char*)&time,2);
+      Serial.println((int)(time-i));
+      i = time;
+      if(i >= 5000)
+        HasSynced = true;
+      hasGivenNo = false;
     }
+    else
+    {
+      if(!hasGivenNo) {
+        Serial.print("no_recv:");
+        Serial.println(i);
+        hasGivenNo = true;
+      }
+    }
+    delay(3);
+  }
+  if(HasSynced)
+    Serial.println("synced!");
+  else {
+    Serial.print("not synced! ");
+    Serial.println("Attempting to sync again.");
+    goto SYNC;
+  }
 }
 
 unsigned int delaytimes[2];
@@ -47,8 +58,9 @@ void mk_sound()
 void loop()
 {
   if(Serial.available())
-    {
-      PCM_to_delaytimes(Serial.read());
-      mk_sound();
-    }
+  {
+    PCM_to_delaytimes(Serial.read());
+    mk_sound();
+  }
 }
+
